@@ -57,7 +57,7 @@ kubectl create namespace spam2000
 
 - `prometheus-deployment.yaml`:
   - PVC мапить на хост директорію `/prometheus` і виділяє 10 GB.
-  - ConfigMap з конфігурацією для автоматичного скрапінгу нашого додатку кожні 15 секунд.
+  - ConfigMap з конфігурацією для автоматичного скейпінгу нашого додатку кожні 15 секунд.
   - Основний Deployment Prometheus та Service з NodePort (для продакшену використовуємо Ingress).
 
 - `spam2000-deployment.yaml`:
