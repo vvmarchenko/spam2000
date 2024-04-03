@@ -1,0 +1,56 @@
+# MAIN APP DEPLOYMENT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.spam2000.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.spam2000.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.spam2000.name }}
+    spec:
+      containers:
+      - name: {{ .Values.spam2000.name }}
+        image: "{{ .Values.spam2000.image.repository }}:{{ .Values.spam2000.image.tag }}"
+        ports:
+        - containerPort: 3000
+
+        # Health checks
+        {{- if .Values.spam2000.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.spam2000.livenessProbe.path }}
+            port: 3000
+          initialDelaySeconds: {{ .Values.spam2000.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.spam2000.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.spam2000.livenessProbe.timeoutSeconds }}
+        {{- end }}
+        {{- if .Values.spam2000.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.spam2000.readinessProbe.path }}
+            port: 3000
+          initialDelaySeconds: {{ .Values.spam2000.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.spam2000.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.spam2000.readinessProbe.timeoutSeconds }}
+        {{- end }}
+
+---
+
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.spam2000.name }}
+spec:
+  type: {{ .Values.spam2000.service.type }}
+  ports:
+  - port: {{ .Values.spam2000.service.port }}
+    targetPort: 3000
+  selector:
+    app: {{ .Values.spam2000.name }}

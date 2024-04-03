@@ -1,0 +1,78 @@
+# PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.grafana.name }}-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.grafana.persistence.size }}
+---
+
+# CONFIGURATIONS
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.grafana.configMap.name }}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://{{ .Values.prometheus.name }}:9090
+        isDefault: true
+        editable: true
+---
+
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.grafana.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.grafana.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.grafana.name }}
+    spec:
+      containers:
+      - name: grafana
+        image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-data-volume
+          mountPath: /var/lib/grafana
+        - name: grafana-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+      volumes:
+      - name: grafana-data-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.grafana.name }}-pvc
+      - name: grafana-datasources
+        configMap:
+          name: {{ .Values.grafana.configMap.name }}
+
+---
+
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.grafana.name }}
+spec:
+  type: {{ .Values.grafana.service.type }}
+  ports:
+  - port: {{ .Values.grafana.service.port }}
+    targetPort: 3000
+  selector:
+    app: {{ .Values.grafana.name }}

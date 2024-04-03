@@ -1,0 +1,75 @@
+# PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.prometheus.name }}-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.persistence.size }}
+---
+
+# CONFIGURATIONS
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.prometheus.configMap.name }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'spam2000'
+        static_configs:
+          - targets: ['{{ .Values.spam2000.name }}:3000']
+---
+
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.prometheus.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.prometheus.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.prometheus.name }}
+    spec:
+      containers:
+      - name: prometheus
+        image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: prometheus-data-volume
+          mountPath: /prometheus
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ .Values.prometheus.configMap.name }}
+      - name: prometheus-data-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.prometheus.name }}-pvc
+
+---
+
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.prometheus.name }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - port: {{ .Values.prometheus.service.port }}
+    targetPort: 9090
+  selector:
+    app: {{ .Values.prometheus.name }}

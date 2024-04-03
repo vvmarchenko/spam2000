@@ -1,0 +1,58 @@
+# Global lables
+global:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+
+spam2000:
+  # App name
+  name: spam2000
+  image:
+    repository: andriiuni/spam2000
+    tag: 1.1394.355
+  service:
+    type: NodePort
+    port: 3000
+
+  # Health checks
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    path: /metrics
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 5
+    path: /metrics
+
+prometheus:
+  name: prometheus
+  image:
+    repository: prom/prometheus
+    tag: v2.51.0
+  # prometheus.yaml config
+  configMap:
+    name: prometheus-config
+  # PVC
+  persistence:
+    size: 10Gi
+  service:
+    type: NodePort
+    port: 9090
+
+grafana:
+  name: grafana
+  image:
+    repository: grafana/grafana
+    tag: 9.5.18
+  # datasources.yaml
+  configMap:
+    name: grafana-config
+  # PVC
+  persistence:
+    size: 10Gi
+  service:
+    type: NodePort
+    port: 3000
