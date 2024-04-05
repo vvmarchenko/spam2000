@@ -1,0 +1,84 @@
+# Global labels
+global:
+  labels:
+    app.kubernetes.io/managed-by: spam2000
+
+spam2000:
+  # App name
+  name: spam2000
+  image:
+    repository: andriiuni/spam2000
+    tag: 1.1394.355
+  service:
+    type: NodePort
+    port: 3000
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  # Health checks
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    path: /metrics
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 5
+    path: /metrics
+
+# PORM + GRAFANA
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+       # Disables default filter for ServiceMonitor
+      serviceMonitorSelectorNilUsesHelmValues: false
+      # Selects ServiceMonitors across all namespaces
+      serviceMonitorNamespaceSelector: {}
+       # Selects which ServiceMonitors to use based on labels
+      serviceMonitorSelector: {}
+      storageSpec:
+        # PVC
+        volumeClaimTemplate:
+          spec:
+            storageClassName: "standard"
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+    service:
+      type: NodePort
+      nodePort: 30090
+
+  grafana:
+    service:
+      type: NodePort
+      nodePort: 30080
+    # Automatically added data sources
+    additionalDataSources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://prometheus-operated:9090
+        isDefault: false
+    # PVC
+    persistence:
+      enabled: true
+      storageClassName: "standard"
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+
+# Variables for import dashboard
+dashboard:
+  datasource: Prometheus
+  uid: myuniqueid
+  title: spam2000

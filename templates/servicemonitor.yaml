@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: {{ .Release.Name }}
+  name: {{ .Values.spam2000.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.spam2000.name }}
+  # Scraping path
+  endpoints:
+  - path: /metrics
+    port: metrics

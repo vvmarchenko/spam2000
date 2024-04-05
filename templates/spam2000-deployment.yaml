@@ -1,0 +1,66 @@
+# MAIN APP DEPLOYMENT
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.spam2000.name }}
+  labels:
+    app: {{ .Values.spam2000.name }}
+spec:
+  replicas: {{ .Values.spam2000.replicas }}
+  strategy:
+    type: "{{ .Values.spam2000.strategy.type }}"
+    rollingUpdate:
+      maxUnavailable: {{ .Values.spam2000.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.spam2000.strategy.rollingUpdate.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ .Values.spam2000.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.spam2000.name }}
+    spec:
+      containers:
+      - name: {{ .Values.spam2000.name }}
+        image: "{{ .Values.spam2000.image.repository }}:{{ .Values.spam2000.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.spam2000.service.port }}
+
+        # Health checks
+        {{- if .Values.spam2000.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.spam2000.livenessProbe.path }}
+            port: {{ .Values.spam2000.service.port }}
+          initialDelaySeconds: {{ .Values.spam2000.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.spam2000.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.spam2000.livenessProbe.timeoutSeconds }}
+        {{- end }}
+        {{- if .Values.spam2000.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.spam2000.readinessProbe.path }}
+            port: {{ .Values.spam2000.service.port }}
+          initialDelaySeconds: {{ .Values.spam2000.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.spam2000.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.spam2000.readinessProbe.timeoutSeconds }}
+        {{- end }}
+
+---
+
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.spam2000.name }}
+  labels:
+    app: {{ .Values.spam2000.name }}
+spec:
+  type: {{ .Values.spam2000.service.type }}
+  ports:
+  - name: metrics
+    port: {{ .Values.spam2000.service.port }}
+    targetPort: {{ .Values.spam2000.service.port }}
+  selector:
+    app: {{ .Values.spam2000.name }}
